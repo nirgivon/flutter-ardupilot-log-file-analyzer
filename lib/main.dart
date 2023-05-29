@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -16,7 +17,6 @@ class MainApp extends StatelessWidget {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: [
-        'bin',
         'log',
       ],
     );
@@ -28,10 +28,17 @@ class MainApp extends StatelessWidget {
         var length = await file.length();
         logger.d(file.path);
         stopwatch.start();
-        final lines = file.readAsLinesSync().length;
+        final lines = file.readAsLinesSync();
+        final numberOfLines = lines.length;
         stopwatch.stop();
         logger.d(
-            'File size: $length bytes, number of lines: $lines, time: ${stopwatch.elapsed}');
+            'File size: $length bytes, number of lines: $numberOfLines, time: ${stopwatch.elapsed}');
+        logger.d({lines[0]});
+        logger.d({lines[0].trim()});
+        final tokens = lines[0].trim().replaceAll(' ', '').split(',');
+        for (final token in tokens) {
+          logger.d({token});
+        }
       }
     }
   }
