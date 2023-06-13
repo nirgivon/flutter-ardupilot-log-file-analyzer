@@ -1,5 +1,3 @@
-import 'package:flight_log_analyzer/models/parameter.dart';
-
 class Sensor {
   final int id;
   final String name;

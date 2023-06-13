@@ -1,11 +1,13 @@
 // import 'dart:collection';
 import 'dart:io';
 
+import 'package:flight_log_analyzer/Widgets/action_bar.dart';
+import 'package:flight_log_analyzer/Widgets/main_body.dart';
 import 'package:flight_log_analyzer/models/data_model.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:flight_log_analyzer/helpers/helpers.dart';
+
+import 'file system/file_handler.dart';
+import 'file system/parse_log_file.dart';
 
 void main() {
   runApp(MainApp());
@@ -19,7 +21,7 @@ class MainApp extends StatefulWidget {
 }
 
 class _MainAppState extends State<MainApp> {
-  final List<Sensor> sensors = [];
+  // final List<Sensor> sensors = [];
 
   final DataModel dataModel = DataModel();
   final _paramsFilterControler = TextEditingController();
@@ -43,77 +45,36 @@ class _MainAppState extends State<MainApp> {
     // print(_paramsFilterControler.text);
 
     List<Parameter> res = [];
-    if (_paramsFilterControler.text.isEmpty) {
+
+    final String searchString = _paramsFilterControler.text;
+
+    if (searchString.isEmpty) {
       res = dataModel.parameters;
     } else {
-      res = dataModel.parameters
-          .where((param) =>
-              param.name.toLowerCase().contains(_paramsFilterControler.text))
-          .toList();
+      if (searchString.startsWith('/')) {
+        res = dataModel.parameters
+            .where((param) =>
+                param.name.toLowerCase().startsWith(searchString.substring(1)))
+            .toList();
+      } else {
+        res = dataModel.parameters
+            .where((param) => param.name.toLowerCase().contains(searchString))
+            .toList();
+      }
     }
+
     setState(() {
       _filteredParameters = res;
     });
   }
 
-  void openFileDialog() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: [
-        'log',
-      ],
-    );
+  void handleFileOpen() async {
+    File? file = await openLogFile();
 
-    if (result != null) {
-      File file = File(result.files.single.path!);
-      if (kDebugMode) {
-        // print(file.path);
-        var length = await file.length();
-        logger.d(file.path);
-        stopwatch.start();
-        final lines = file.readAsLinesSync();
-        final numberOfLines = lines.length;
-        stopwatch.stop();
-        logger.d(
-            'File size: $length bytes, number of lines: $numberOfLines, time: ${stopwatch.elapsed}');
-
-        for (final line in lines) {
-          final tokens = line.trim().replaceAll(' ', '').split(',');
-
-          switch (tokens[0]) {
-            case 'FMT':
-              int? id = int.tryParse(tokens[1]);
-              String name = tokens[3];
-
-              if (id == null) {
-                logger.e('Could not parse sensor id: ${tokens[1]}');
-                break;
-              }
-              final Sensor sensor = Sensor(id: id, name: name);
-
-              for (int i = 5; i < tokens.length; i++) {
-                sensor.parameterNames.add(tokens[i]);
-              }
-
-              sensors.add(sensor);
-              break;
-            case 'PARM':
-              String name = tokens[2];
-              double? value = double.tryParse(tokens[3]);
-              if (value == null) {
-                logger.e('Could not parse parameter value: ${tokens[3]}');
-                break;
-              }
-
-              dataModel.parameters.add(Parameter(name: name, value: value));
-              break;
-          }
-        }
-        for (final sensor in sensors) {
-          logger.d(sensor.parameterNames);
-        }
-        setState(() {});
-      }
+    if (file != null) {
+      setState(() {
+        parseLogFile(file, dataModel);
+      });
     }
   }
 
@@ -121,44 +82,41 @@ class _MainAppState extends State<MainApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        body: Row(
+        body: Column(
           children: [
-            Expanded(
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: TextField(
-                  controller: _paramsFilterControler,
-                  decoration: const InputDecoration(label: Text('Filter:')),
-                ),
-              ),
-            ),
-            Expanded(
-              flex: 2,
-              child: ListView.builder(
-                itemCount: _filteredParameters.length,
-                itemBuilder: (ctx, index) => Row(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(_filteredParameters[index].name),
-                    ),
-                    const Spacer(),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(_filteredParameters[index].value.toString()),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Expanded(
-              flex: 5,
-              child: Center(
-                child: TextButton(
-                    onPressed: openFileDialog, child: const Text('Click Me')),
-              ),
-            ),
+            ActionBar(),
+            MainBody(),
+            // Padding(
+            //   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            //   child: TextField(
+            //     controller: _paramsFilterControler,
+            //     decoration: const InputDecoration(label: Text('Filter:')),
+            //   ),
+            // ),
+            // Center(
+            //   child: TextButton(
+            //       onPressed: handleFileOpen,
+            //       child: const Text('Open Log file')),
+            // ),
+            // Expanded(
+            //   // flex: 2,
+            //   child: ListView.builder(
+            //     itemCount: _filteredParameters.length,
+            //     itemBuilder: (ctx, index) => Row(
+            //       children: [
+            //         Padding(
+            //           padding: const EdgeInsets.all(8.0),
+            //           child: Text(_filteredParameters[index].name),
+            //         ),
+            //         const Spacer(),
+            //         Padding(
+            //           padding: const EdgeInsets.all(8.0),
+            //           child: Text(_filteredParameters[index].value.toString()),
+            //         ),
+            //       ],
+            //     ),
+            //   ),
+            // ),
           ],
         ),
       ),
