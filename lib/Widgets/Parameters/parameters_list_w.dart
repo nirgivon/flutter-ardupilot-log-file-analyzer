@@ -6,7 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flight_log_analyzer/models/data_model.dart';
 
 class ParametersListW extends StatefulWidget {
-  ParametersListW({super.key});
+  const ParametersListW(this.dataModel, {super.key});
+
+  final DataModel dataModel;
 
   @override
   _ParametersListWState createState() => _ParametersListWState();
@@ -17,12 +19,10 @@ class _ParametersListWState extends State<ParametersListW> {
 
   final _paramsFilterControler = TextEditingController();
 
-  final DataModel dataModel = DataModel();
-
   @override
   void initState() {
     _paramsFilterControler.addListener(paramsFilterTextChanged);
-    _filteredParameters = dataModel.parameters;
+    _filteredParameters = widget.dataModel.parameters;
     super.initState();
   }
 
@@ -37,7 +37,7 @@ class _ParametersListWState extends State<ParametersListW> {
 
     if (file != null) {
       setState(() {
-        parseLogFile(file, dataModel);
+        parseLogFile(file, widget.dataModel);
       });
     }
   }
@@ -50,15 +50,15 @@ class _ParametersListWState extends State<ParametersListW> {
     final String searchString = _paramsFilterControler.text;
 
     if (searchString.isEmpty) {
-      res = dataModel.parameters;
+      res = widget.dataModel.parameters;
     } else {
       if (searchString.startsWith('/')) {
-        res = dataModel.parameters
+        res = widget.dataModel.parameters
             .where((param) =>
                 param.name.toLowerCase().startsWith(searchString.substring(1)))
             .toList();
       } else {
-        res = dataModel.parameters
+        res = widget.dataModel.parameters
             .where((param) => param.name.toLowerCase().contains(searchString))
             .toList();
       }

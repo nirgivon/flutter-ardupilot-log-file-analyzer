@@ -1,8 +1,11 @@
+import 'package:flight_log_analyzer/Widgets/Graph/graph_display_w.dart';
 import 'package:flight_log_analyzer/Widgets/Parameters/parameters_list_w.dart';
+import 'package:flight_log_analyzer/models/data_model.dart';
 import 'package:flutter/material.dart';
 
 class MainBody extends StatelessWidget {
-  const MainBody({super.key});
+  const MainBody(this.dataModel, {super.key});
+  final DataModel dataModel;
 
   @override
   Widget build(BuildContext context) {
@@ -11,12 +14,12 @@ class MainBody extends StatelessWidget {
         children: [
           SizedBox(
             width: 260,
-            child: ParametersListW(),
+            child: ParametersListW(dataModel),
           ),
           const SizedBox(
             width: 100,
           ),
-          const Text('main body'),
+          LineChartSample1(dataModel),
         ],
       ),
     );
